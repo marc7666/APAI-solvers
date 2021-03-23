@@ -143,5 +143,3 @@ if __name__ == '__main__' :
 
     # Results
     sys.stdout.write("Total time = %.2f\n" % total_time)
-
-hola
