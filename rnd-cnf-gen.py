@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import sys
 import random
 
+
 # Classes
 
 class Clause():
@@ -39,19 +40,18 @@ class Clause():
     def gen_random_clause(self, num_vars):
         """ Generate random clause"""
         self.lits = []
-        while len(self.lits) < self.length: # Set the variables of the clause
-            new_lit = random.randint(1, num_vars) # New random variable
-            if new_lit not in self.lits: #If the variable is not already in the clause
-                self.lits.append(new_lit) # Add it to the clause
-        for i in xrange(len(self.lits)): # Sets a negative sense with a 50% probability
+        while len(self.lits) < self.length:  # Set the variables of the clause
+            new_lit = random.randint(1, num_vars)  # New random variable
+            if new_lit not in self.lits:  # If the variable is not already in the clause
+                self.lits.append(new_lit)  # Add it to the clause
+        for i in xrange(len(self.lits)):  # Sets a negative sense with a 50% probability
             if random.random() < 0.5:
-                self.lits[i] *= -1 # Change the sense of the literal
+                self.lits[i] *= -1  # Change the sense of the literal
 
     def show(self):
         """Prints a clause to the stdout"""
 
         sys.stdout.write("%s 0\n" % " ".join(str(l) for l in self.lits))
-
 
 
 class CNF():
@@ -131,4 +131,3 @@ if __name__ == '__main__':
     cnf_formula = CNF(num_vars, num_clauses, clause_length)
     # Show formula
     cnf_formula.show()
-    
