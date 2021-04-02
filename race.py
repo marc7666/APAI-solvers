@@ -9,12 +9,12 @@ import re
 import stat
 import subprocess
 
-out_file = "out.txt"  # Solver output
-limits_file = "tmp-limits.sh"  # Limits script file
-timeout = 10  # Timeout for each run
-inc_to = 2  # Multiplier for timeout
-inc_bug = 10000  # Multiplier for bug
-
+out_file = "out.txt" # Solver output
+limits_file = "tmp-limits.sh" # Limits script file
+timeout = 10 # Timeout for each run
+inc_to = 2 # Multiplier for timeout
+inc_bug = 10000 # Multiplier for bug
+verbose = False # Verbose flag
 
 # Parse CPU time in file
 def get_time(out_file):
@@ -27,7 +27,6 @@ def get_time(out_file):
             break
     return time
 
-
 # Parse SATISFIABLE in file
 def get_sat(out_file):
     r = re.compile(r"^s SATISFIABLE")
@@ -37,7 +36,6 @@ def get_sat(out_file):
             return True
     return False
 
-
 # Parse solver solution in file
 def get_solution(out_file):
     r = re.compile(r"^v (.+)")
@@ -45,7 +43,7 @@ def get_solution(out_file):
         s = re.search(r, l)
         if s:
             sol = s.group(1).split()
-            sol.insert(0, "0")  # Adds a 0 at the begginig to make variable 'i' at potition 'i'
+            sol.insert(0, "0") # Adds a 0 at the begginig to make variable 'i' at potition 'i'
             try:
                 return list(map(int, sol))
             except:
@@ -53,25 +51,23 @@ def get_solution(out_file):
             break
     return None
 
-
 # Check if the solution is a real solution to the benchmark file
 def check_solution(solution, benchmark_file):
     instance = open(benchmark_file, "r")
     for l in instance:
-        if l[0] in ["c", "p"]:  # Pass comments and program line
+        if l[0] in ["c", "p"]: # Pass comments and program line
             continue
         sl = list(map(int, l.split()))
-        sl.pop()  # Remove last 0
+        sl.pop() # Remove last 0
         length = len(sl)
         for lit in sl:
-            if lit == solution[abs(lit)]:  # Satisfies clause
+            if lit == solution[abs(lit)]: # Satisfies clause
                 break
             else:
                 length -= 1
-        if length == 0:  # Falsified clause
+        if length == 0: # Falsified clause
             return False
     return True
-
 
 # Check the correctness of the solution
 def check_correctness(benchmark_file, out_file):
@@ -82,11 +78,15 @@ def check_correctness(benchmark_file, out_file):
             return check_solution(solution, benchmark_file)
     return None
 
+if __name__ == '__main__' :
 
-if __name__ == '__main__':
+    if len(sys.argv) < 3 or len(sys.argv) > 4:
+        sys.exit("Use: %s <benchmark_folder> <solver>" % sys.argv[0])
 
-    if len(sys.argv) != 3:
-        sys.exit("Use: %s <benchmark_folder> <solver>")
+    if len(sys.argv) == 4:
+        option = sys.argv[3]
+        if option == 'v':
+            verbose = True
 
     benchmark_folder = sys.argv[1]
     solver = sys.argv[2]
@@ -103,11 +103,11 @@ if __name__ == '__main__':
         sys.exit("ERROR: Solver not found (%s)." % solver)
 
     # Check solver
-    if not (os.stat(solver).st_mode & stat.S_IXUSR):
-        sys.exit("ERROR: Solver %s without execute (x) permission." % solver)
-    # Create file limits.sh
+    # if not (os.stat(solver).st_mode & stat.S_IXUSR):
+    #     sys.exit("ERROR: Solver %s without execute (x) permission." % solver)
+    #Create file limits.sh
     with open(limits_file, "w") as f:
-        f.write("#!/bin/bash\nulimit -t %i\n$1 $2\n" % timeout)
+        f.write("#!/bin/bash\nulimit -t %i\npython3 $1 $2\n" % timeout)
     st = os.stat(limits_file)
     os.chmod(limits_file, st.st_mode | stat.S_IXUSR)
 
@@ -123,22 +123,27 @@ if __name__ == '__main__':
         sys.stdout.flush()
         # Run the solver under limits
         with open(out_file, 'w') as output:
-            subprocess.run(['time', '-p', './%s' % limits_file, solver, bf], stdout=output, stderr=subprocess.STDOUT)
-        # Check result
+            subprocess.run(['time', '-p', './%s' % limits_file, solver, bf], stdout = output, stderr = subprocess.STDOUT)
+        if verbose:
+            with open(out_file, 'r') as output:
+                sys.stdout.write('\n')
+                for l in output.readlines():
+                    sys.stdout.write(l)
+        #Check result
         correct = check_correctness(bf, out_file)
-        if correct == True:  # The solution is correct
-            # Get Time
+        if correct == True: # The solution is correct
+            #Get Time
             time = get_time(out_file)
-            if time == None:  # This should not happend
+            if time == None: # This should not happend
                 time = timeout * inc_to
                 sys.stdout.write("Time not found! time = %.2f\n" % time)
             else:
                 time = float(time)
                 sys.stdout.write("OK! time = %.2f\n" % time)
-        elif correct == None:  # There is no solution
+        elif correct == None: # There is no solution
             time = timeout * inc_to
             sys.stdout.write("No solution found! time = %i\n" % time)
-        elif correct == False:  # There is a bug in the solution
+        elif correct == False: # There is a bug in the solution
             time = timeout * inc_bug
             sys.stdout.write("Wrong solution! time = %i\n" % time)
         total_time += time
