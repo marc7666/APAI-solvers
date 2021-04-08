@@ -8,26 +8,31 @@
 # Libraries
 
 from random import *
-import sys
 import numpy as np
+import sys
 
 
 # Classes
 
-def cnf_parser(cnf):
-    clauses = []
-    vars = 0
-    for line in cnf:
-        line = line.split()
-        if line[0] != 'c' and line[0] != 'p':
-            clauses.append([int(x) for x in line[:-1]])
-        elif line[0] == 'p':
-            vars = line[2]
-    return int(vars), clauses
+# First of all, we read the input file in this function and we take the data that we need.
 
+def read_file(filename):
+    clauses_list = []
+    for line in open(filename):
+        if line.startswith('c'): # Comment line
+            continue
+        if line.startswith('p'): # Data => clauses and variables
+            vars = line.split()[2]
+            continue
+        clause = [int(x) for x in line[:-2].split()]
+        clauses_list.append(clause)
+    return clauses_list, int(vars)
+
+
+# We generate a random solution to use in the solver
 
 def random_solution_generator(vars):
-    solution = np.arange(1, vars + 1)
+    solution = np.arange(1, vars + 1) # Return evenly spaced values within a given interval
     for i in range(len(solution)):
         if random() < 0.5:
             solution[i] *= -1
@@ -36,25 +41,25 @@ def random_solution_generator(vars):
 
 # This function returns the formula that results from the parameters of the function.
 
-def data_structure(clauses, n_var):
+def formula_struct(clauses, vars):
     formula = []
-    for i in range(n_var * 2):
+    for i in range(vars * 2):
         formula.append([])
-
     for c in range(len(clauses)):
         for x in clauses[c]:
-            if x > 0:
-                formula[x - 1].append(c)
-            else:
+            if x <= 0:
                 formula[x].append(c)
+            else:
+                formula[x - 1].append(c)
+
     return formula
 
 
 # This function returns de number of the satisfiable literals.
 
-def data_structure2(formula, solution):
-    sat_literals = [0] * len(formula)
+def sat_literals_count(formula, solution):
     count = 0
+    sat_literals = [0] * len(formula)
     for clauses in formula:
         for literal in clauses:
             if literal == solution[abs(literal) - 1]:
@@ -63,13 +68,16 @@ def data_structure2(formula, solution):
     return sat_literals
 
 
-def walk_sat(clauses, n_vars):
+# This is the principal method (the function of the solver) we will use it to find the solution and show if
+# it is satisfactory or not in addition to showing the model and the name of our solver
+
+def walk_sat(clauses, vars):
     formula = clauses
-    data_structure(formula, n_vars)
+    formula_struct(formula, vars)
     while 1:
-        solution = random_solution_generator(n_vars)
-        sat_literals = data_structure2(formula, solution)
-        for i in range(3 * n_vars):
+        solution = random_solution_generator(vars)
+        sat_literals = sat_literals_count(formula, solution)
+        for i in range(3 * vars):
             zero_positions = [i for i, j in enumerate(sat_literals) if j == 0]
             print("c rober_sat")
             if len(zero_positions) == 0:
@@ -77,25 +85,28 @@ def walk_sat(clauses, n_vars):
             else:
                 return print("s UNSATISFIABLE")
             x = zero_positions[randint(0, len(zero_positions) - 1)]
-            pivote_var = pivote_var(formula[x], sat_literals, literals_in_clauses, solution)
-            if pivote_var[1] > 0 and random() < 0.30:
+            pivot_var = pivot_var(formula[x], sat_literals, literals_in_clauses, solution)
+            if pivot_var[1] > 0 and random() < 0.30:
                 to_flip = abs(formula[x][randint(0, len(formula[0]) - 1)])
             else:
-                to_flip = pivote_var[0]
+                to_flip = pivot_var[0]
             flip(sat_literals, literals_in_clauses, to_flip, solution)
+            
 
-
+# This function flips the value of a literal.
+            
 def flip(sat_literals, lit_in_clause, to_flip, solution):
     if solution[to_flip - 1] < 0:
-        for x in lit_in_clause[to_flip - 1]:
-            sat_literals[x] += 1
         for x in lit_in_clause[-to_flip]:
             sat_literals[x] -= 1
+        for x in lit_in_clause[to_flip - 1]:
+            sat_literals[x] += 1
     else:
         for x in lit_in_clause[to_flip - 1]:
             sat_literals[x] -= 1
         for x in lit_in_clause[-to_flip]:
             sat_literals[x] += 1
+
     solution[to_flip - 1] *= -1
 
 
@@ -103,12 +114,12 @@ def pivot(clause, sat_literals, lit_in_clause, solution):
     min = 999999999
     for literal in clause:
         pivot = 0
-        if solution[abs(literal) - 1] < 0:
-            for x in lit_in_clause[-abs(literal)]:
+        if solution[abs(literal) - 1] >= 0:
+            for x in lit_in_clause[abs(literal) - 1]:
                 if sat_literals[x] == 1:
                     pivot += 1
         else:
-            for x in lit_in_clause[abs(literal) - 1]:
+            for x in lit_in_clause[-abs(literal)]:
                 if sat_literals[x] == 1:
                     pivot += 1
         if pivot < min:
@@ -117,6 +128,9 @@ def pivot(clause, sat_literals, lit_in_clause, solution):
     return abs(to_flip), min
 
 
+# Main
+
 if __name__ == '__main__':
-    n_vars, clauses = cnf_parser(open(sys.argv[1], "r"))
-    walk_sat(clauses, n_vars)
+    clauses, vars = read_file(sys.argv[1])
+    walk_sat(clauses, vars)
+
