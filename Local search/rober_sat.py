@@ -24,7 +24,7 @@ def read_file(filename):
         if line.startswith('p'): # Data => clauses and variables
             vars = line.split()[2]
             continue
-        clause = [int(x) for x in line[:-2].split()]
+        clause = [int(x) for x in line[:-2].split()] # Constructing a clause
         clauses_list.append(clause)
     return clauses_list, int(vars)
 
