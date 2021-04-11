@@ -19,12 +19,12 @@ import sys
 def read_file(filename):
     clauses_list = []
     for line in open(filename):
-        if line.startswith('c'): # Comment line
+        if line.startswith('c'):  # Comment line
             continue
-        if line.startswith('p'): # Data => clauses and variables
+        if line.startswith('p'):  # Data => clauses and variables
             vars = line.split()[2]
             continue
-        clause = [int(x) for x in line[:-2].split()] # Constructing a clause
+        clause = [int(x) for x in line[:-2].split()]  # Constructing a clause
         clauses_list.append(clause)
     return clauses_list, int(vars)
 
@@ -32,7 +32,7 @@ def read_file(filename):
 # We generate a random solution to use in the solver
 
 def random_solution_generator(vars):
-    solution = np.arange(1, vars + 1) # Return evenly spaced values within a given interval
+    solution = np.arange(1, vars + 1)  # Return evenly spaced values within a given interval
     for i in range(len(solution)):
         if random() < 0.5:
             solution[i] *= -1
@@ -91,10 +91,10 @@ def walk_sat(clauses, vars):
             else:
                 to_flip = pivot_var[0]
             flip(sat_literals, literals_in_clauses, to_flip, solution)
-            
+
 
 # This function flips the value of a literal.
-            
+
 def flip(sat_literals, lit_in_clause, to_flip, solution):
     if solution[to_flip - 1] < 0:
         for x in lit_in_clause[-to_flip]:
@@ -133,4 +133,3 @@ def pivot(clause, sat_literals, lit_in_clause, solution):
 if __name__ == '__main__':
     clauses, vars = read_file(sys.argv[1])
     walk_sat(clauses, vars)
-
