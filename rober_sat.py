@@ -7,7 +7,6 @@
 
 # Libraries
 import sys
-import random
 
 
 # Classes
