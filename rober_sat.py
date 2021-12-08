@@ -35,8 +35,8 @@ def create_clause(formula, unit):
 			continue
 		else:
 			new_c = [var for var in c if var != -unit]
-			# Falle aqui
 			if not new_c:
+				# Returning -1 here means that there is [unit] and [-unit] in formula, therefore INSAT
 				return -1
 			list_of_clauses.append(new_c)
 	return list_of_clauses
@@ -51,7 +51,9 @@ def unit_propagation(formula):
 		unit = unit_clauses_list[0]
 		formula = create_clause(formula, unit[0])
 		temp += [unit[0]]
+		# If formula is -1 it means it is already INSAT, and iterating it will cause an Exception
 		if formula == -1:
+			# If this error happens, we just propagate the error to the calling functions
 			return formula, temp
 		unit_clauses_list = [c for c in formula if len(c) == 1]
 	return formula, temp
@@ -78,7 +80,9 @@ def shortest_clause(formula):
 
 def backtracking_algorithm(formula, k):
 	formula, unit = unit_propagation(formula)
+	# If formula is -1 it means we found two contradicting clauses, so we return False
 	if formula == -1:
+		# The calling function will keep backtracking at line 92 or return False, which means the formula is INSAT
 		return False
 	k = k + unit
 	if not formula:
